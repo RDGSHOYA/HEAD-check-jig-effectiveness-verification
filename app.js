@@ -31,6 +31,7 @@ const elements = {
   stackedChart: document.querySelector('#stackedChart'),
   topChart: document.querySelector('#topChart'),
   detailRows: document.querySelector('#detailRows'),
+  totalRow: document.querySelector('#totalRow'),
 };
 
 function clamp(value, max) {
@@ -62,16 +63,32 @@ function calculate(head) {
   const input = state.inputs[head.partNo];
   const unnecessary = Math.min(input.unnecessary, input.total);
   const required = input.total - unnecessary;
+  const exchangeHeadAmount = head.cost * input.total;
   const partsSavings = head.cost * unnecessary;
   const traditionalLaborCost = EXCHANGE_MINUTES * state.laborRate * input.total;
-  const checkedLaborCost =
-    NO_EXCHANGE_MINUTES * state.laborRate * unnecessary + REQUIRED_AFTER_CHECK_MINUTES * state.laborRate * required;
+  const newWorkAmount = REQUIRED_AFTER_CHECK_MINUTES * state.laborRate * input.total;
+  const reducedLaborAmount = (REQUIRED_AFTER_CHECK_MINUTES - NO_EXCHANGE_MINUTES) * state.laborRate * unnecessary;
+  const checkedLaborCost = newWorkAmount - reducedLaborAmount;
   const laborSavings = traditionalLaborCost - checkedLaborCost;
   const totalSavings = partsSavings + laborSavings;
   const baseCost = (head.cost + EXCHANGE_MINUTES * state.laborRate) * input.total;
   const reductionRate = baseCost > 0 ? (totalSavings / baseCost) * 100 : 0;
 
-  return { ...head, total: input.total, unnecessary, required, partsSavings, laborSavings, totalSavings, baseCost, reductionRate };
+  return {
+    ...head,
+    total: input.total,
+    unnecessary,
+    required,
+    exchangeHeadAmount,
+    traditionalLaborCost,
+    newWorkAmount,
+    reducedLaborAmount,
+    partsSavings,
+    laborSavings,
+    totalSavings,
+    baseCost,
+    reductionRate,
+  };
 }
 
 function getRows() {
@@ -84,13 +101,29 @@ function getTotals(rows) {
       acc.total += row.total;
       acc.unnecessary += row.unnecessary;
       acc.required += row.required;
+      acc.exchangeHeadAmount += row.exchangeHeadAmount;
+      acc.traditionalLaborCost += row.traditionalLaborCost;
       acc.partsSavings += row.partsSavings;
+      acc.newWorkAmount += row.newWorkAmount;
+      acc.reducedLaborAmount += row.reducedLaborAmount;
       acc.laborSavings += row.laborSavings;
       acc.totalSavings += row.totalSavings;
       acc.baseCost += row.baseCost;
       return acc;
     },
-    { total: 0, unnecessary: 0, required: 0, partsSavings: 0, laborSavings: 0, totalSavings: 0, baseCost: 0 },
+    {
+      total: 0,
+      unnecessary: 0,
+      required: 0,
+      exchangeHeadAmount: 0,
+      traditionalLaborCost: 0,
+      partsSavings: 0,
+      newWorkAmount: 0,
+      reducedLaborAmount: 0,
+      laborSavings: 0,
+      totalSavings: 0,
+      baseCost: 0,
+    },
   );
   total.reductionRate = total.baseCost > 0 ? (total.totalSavings / total.baseCost) * 100 : 0;
   return total;
@@ -101,7 +134,7 @@ function renderKpis(totals) {
     ['総交換件数', `${totals.total.toLocaleString('ja-JP')}件`, 'No'],
     ['交換不要件数', `${totals.unnecessary.toLocaleString('ja-JP')}件`, 'OK'],
     ['チェック後交換件数', `${totals.required.toLocaleString('ja-JP')}件`, 'EX'],
-    ['削減部品費', compactYen(totals.partsSavings), '¥'],
+    ['削減HEAD費用', compactYen(totals.partsSavings), '¥'],
     ['工数効果額', compactYen(totals.laborSavings), '工'],
     ['正味効果額', compactYen(totals.totalSavings), '+'],
     ['削減率', percent(totals.reductionRate), '%'],
@@ -142,7 +175,7 @@ function renderRanking(rows) {
 
 function renderDonut(totals) {
   const values = [
-    { label: '削減部品費', value: totals.partsSavings, color: COLORS[0] },
+    { label: '削減HEAD費用', value: totals.partsSavings, color: COLORS[0] },
     { label: totals.laborSavings >= 0 ? '工数削減額' : '工数増加額', value: Math.abs(totals.laborSavings), color: COLORS[1] },
   ];
   const sum = values.reduce((acc, item) => acc + item.value, 0);
@@ -247,7 +280,11 @@ function renderTable(rows) {
         <td class="number">${yen(row.cost)}</td>
         <td class="number"><input class="table-input" data-part="${row.partNo}" data-field="total" type="number" min="0" value="${row.total}" /></td>
         <td class="number"><input class="table-input" data-part="${row.partNo}" data-field="unnecessary" type="number" min="0" max="${row.total}" value="${row.unnecessary}" /></td>
+        <td class="number" data-part="${row.partNo}" data-output="exchangeHeadAmount">${yen(row.exchangeHeadAmount)}</td>
+        <td class="number" data-part="${row.partNo}" data-output="traditionalLaborCost">${yen(row.traditionalLaborCost)}</td>
         <td class="number" data-part="${row.partNo}" data-output="partsSavings">${yen(row.partsSavings)}</td>
+        <td class="number" data-part="${row.partNo}" data-output="newWorkAmount">${yen(row.newWorkAmount)}</td>
+        <td class="number" data-part="${row.partNo}" data-output="reducedLaborAmount">${yen(row.reducedLaborAmount)}</td>
         <td class="number ${row.laborSavings < 0 ? 'negative-text' : ''}" data-part="${row.partNo}" data-output="laborSavings">${yen(row.laborSavings)}</td>
         <td class="number strong-number" data-part="${row.partNo}" data-output="totalSavings">${yen(row.totalSavings)}</td>
         <td class="number" data-part="${row.partNo}" data-output="reductionRate">${percent(row.reductionRate)}</td>
@@ -265,7 +302,11 @@ function updateTableResults(rows) {
     unnecessaryInput.value = String(row.unnecessary);
     unnecessaryInput.max = String(row.total);
 
+    elements.detailRows.querySelector(`[data-part="${row.partNo}"][data-output="exchangeHeadAmount"]`).textContent = yen(row.exchangeHeadAmount);
+    elements.detailRows.querySelector(`[data-part="${row.partNo}"][data-output="traditionalLaborCost"]`).textContent = yen(row.traditionalLaborCost);
     elements.detailRows.querySelector(`[data-part="${row.partNo}"][data-output="partsSavings"]`).textContent = yen(row.partsSavings);
+    elements.detailRows.querySelector(`[data-part="${row.partNo}"][data-output="newWorkAmount"]`).textContent = yen(row.newWorkAmount);
+    elements.detailRows.querySelector(`[data-part="${row.partNo}"][data-output="reducedLaborAmount"]`).textContent = yen(row.reducedLaborAmount);
     const laborOutput = elements.detailRows.querySelector(`[data-part="${row.partNo}"][data-output="laborSavings"]`);
     const totalOutput = elements.detailRows.querySelector(`[data-part="${row.partNo}"][data-output="totalSavings"]`);
     laborOutput.textContent = yen(row.laborSavings);
@@ -276,6 +317,24 @@ function updateTableResults(rows) {
   });
 }
 
+function renderTotalRow(totals) {
+  elements.totalRow.innerHTML = `
+    <tr class="total-row">
+      <td colspan="3">合計</td>
+      <td class="number">${totals.total.toLocaleString('ja-JP')}件</td>
+      <td class="number">${totals.unnecessary.toLocaleString('ja-JP')}件</td>
+      <td class="number">${yen(totals.exchangeHeadAmount)}</td>
+      <td class="number">${yen(totals.traditionalLaborCost)}</td>
+      <td class="number">${yen(totals.partsSavings)}</td>
+      <td class="number">${yen(totals.newWorkAmount)}</td>
+      <td class="number">${yen(totals.reducedLaborAmount)}</td>
+      <td class="number ${totals.laborSavings < 0 ? 'negative-text' : ''}">${yen(totals.laborSavings)}</td>
+      <td class="number strong-number ${totals.totalSavings < 0 ? 'negative-text' : ''}">${yen(totals.totalSavings)}</td>
+      <td class="number">${percent(totals.reductionRate)}</td>
+    </tr>
+  `;
+}
+
 function renderDashboard() {
   const rows = getRows();
   const totals = getTotals(rows);
@@ -284,6 +343,7 @@ function renderDashboard() {
   renderDonut(totals);
   renderVerticalCharts(rows);
   updateTableResults(rows);
+  renderTotalRow(totals);
 }
 
 elements.laborRate.addEventListener('input', (event) => {
