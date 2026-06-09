@@ -427,6 +427,11 @@ tfoot td {
   font-weight: 900;
 }
 
+.blue-text {
+  color: #1d4ed8 !important;
+  font-weight: 900;
+}
+
 .negative-text {
   color: #dc2626 !important;
 }
