@@ -38,7 +38,7 @@
 
       <section class="chart-grid two">
         <article class="panel">
-          <h2>削減部品費・工数影響比較</h2>
+          <h2>削減HEAD費用・工数影響比較</h2>
           <div id="stackedChart" class="vertical-chart"></div>
         </article>
         <article class="panel">
@@ -54,6 +54,21 @@
         </div>
         <div class="table-scroll">
           <table>
+            <colgroup>
+              <col class="col-part" />
+              <col class="col-name" />
+              <col class="col-money" />
+              <col class="col-count" />
+              <col class="col-count-wide" />
+              <col class="col-money" />
+              <col class="col-money" />
+              <col class="col-money" />
+              <col class="col-money" />
+              <col class="col-money" />
+              <col class="col-money" />
+              <col class="col-money" />
+              <col class="col-rate" />
+            </colgroup>
             <thead>
               <tr>
                 <th>パーツNo</th>
@@ -61,13 +76,18 @@
                 <th class="number">原価</th>
                 <th class="number">交換件数</th>
                 <th class="number">交換不要件数</th>
-                <th class="number">削減部品費</th>
+                <th class="number">交換HEAD金額</th>
+                <th class="number">従来作業金額</th>
+                <th class="number">削減HEAD費用</th>
+                <th class="number">新作業金額</th>
+                <th class="number">削減工数金額</th>
                 <th class="number">工数効果額</th>
                 <th class="number">正味効果額</th>
                 <th class="number">削減率</th>
               </tr>
             </thead>
             <tbody id="detailRows"></tbody>
+            <tfoot id="totalRow"></tfoot>
           </table>
         </div>
       </section>
