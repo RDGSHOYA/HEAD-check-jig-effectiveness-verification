@@ -350,29 +350,72 @@ h2 {
 }
 
 .table-scroll {
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 table {
   width: 100%;
-  min-width: 1120px;
+  min-width: 0;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 11px;
+  table-layout: fixed;
 }
 
 th {
-  padding: 12px 10px;
+  padding: 10px 6px;
   background: #ece8df;
   color: #4b4439;
-  font-size: 12px;
+  font-size: 10px;
   text-align: left;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: keep-all;
 }
 
 td {
-  padding: 10px;
+  padding: 8px 6px;
   border-bottom: 1px solid #ece8df;
   color: #4b4439;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+.col-part {
+  width: 6%;
+}
+
+.col-name {
+  width: 16%;
+}
+
+.col-count {
+  width: 5%;
+}
+
+.col-count-wide {
+  width: 6%;
+}
+
+.col-money {
+  width: 7%;
+}
+
+.col-rate {
+  width: 4%;
+}
+
+.table-input {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 11px;
+}
+
+tfoot td {
+  border-top: 2px solid #d9d1c4;
+  border-bottom: 0;
+  background: #f7f5f1;
+  color: #211f1b;
+  font-weight: 900;
 }
 
 .number {
