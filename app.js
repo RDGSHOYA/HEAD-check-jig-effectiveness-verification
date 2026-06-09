@@ -16,11 +16,51 @@ const EXCHANGE_MINUTES = 120;
 const NO_EXCHANGE_MINUTES = 76;
 const REQUIRED_AFTER_CHECK_MINUTES = 156;
 const COLORS = ['#2563eb', '#dc2626'];
+const STORAGE_KEY = 'head-check-dashboard-state-v1';
 
-const state = {
-  laborRate: 40,
-  inputs: Object.fromEntries(HEAD_MASTERS.map((head) => [head.partNo, { total: 0, unnecessary: 0 }])),
-};
+function createInitialInputs() {
+  return Object.fromEntries(HEAD_MASTERS.map((head) => [head.partNo, { total: 0, unnecessary: 0 }]));
+}
+
+function loadSavedState() {
+  const fallback = { laborRate: 40, inputs: createInitialInputs() };
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    if (!saved || typeof saved !== 'object') return fallback;
+
+    const inputs = createInitialInputs();
+    HEAD_MASTERS.forEach((head) => {
+      const savedInput = saved.inputs?.[head.partNo];
+      if (!savedInput) return;
+
+      const total = clamp(savedInput.total);
+      inputs[head.partNo] = {
+        total,
+        unnecessary: clamp(savedInput.unnecessary, total),
+      };
+    });
+
+    return {
+      laborRate: clamp(saved.laborRate),
+      inputs,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function saveState() {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      laborRate: state.laborRate,
+      inputs: state.inputs,
+    }),
+  );
+}
+
+const state = loadSavedState();
 
 const elements = {
   laborRate: document.querySelector('#laborRate'),
@@ -282,9 +322,9 @@ function renderTable(rows) {
         <td class="number"><input class="table-input" data-part="${row.partNo}" data-field="unnecessary" type="number" min="0" max="${row.total}" value="${row.unnecessary}" /></td>
         <td class="number" data-part="${row.partNo}" data-output="exchangeHeadAmount">${yen(row.exchangeHeadAmount)}</td>
         <td class="number" data-part="${row.partNo}" data-output="traditionalLaborCost">${yen(row.traditionalLaborCost)}</td>
-        <td class="number" data-part="${row.partNo}" data-output="partsSavings">${yen(row.partsSavings)}</td>
+        <td class="number blue-text" data-part="${row.partNo}" data-output="partsSavings">${yen(row.partsSavings)}</td>
         <td class="number" data-part="${row.partNo}" data-output="newWorkAmount">${yen(row.newWorkAmount)}</td>
-        <td class="number" data-part="${row.partNo}" data-output="reducedLaborAmount">${yen(row.reducedLaborAmount)}</td>
+        <td class="number blue-text" data-part="${row.partNo}" data-output="reducedLaborAmount">${yen(row.reducedLaborAmount)}</td>
         <td class="number ${row.laborSavings < 0 ? 'negative-text' : ''}" data-part="${row.partNo}" data-output="laborSavings">${yen(row.laborSavings)}</td>
         <td class="number strong-number" data-part="${row.partNo}" data-output="totalSavings">${yen(row.totalSavings)}</td>
         <td class="number" data-part="${row.partNo}" data-output="reductionRate">${percent(row.reductionRate)}</td>
@@ -325,9 +365,9 @@ function renderTotalRow(totals) {
       <td class="number">${totals.unnecessary.toLocaleString('ja-JP')}件</td>
       <td class="number">${yen(totals.exchangeHeadAmount)}</td>
       <td class="number">${yen(totals.traditionalLaborCost)}</td>
-      <td class="number">${yen(totals.partsSavings)}</td>
+      <td class="number blue-text">${yen(totals.partsSavings)}</td>
       <td class="number">${yen(totals.newWorkAmount)}</td>
-      <td class="number">${yen(totals.reducedLaborAmount)}</td>
+      <td class="number blue-text">${yen(totals.reducedLaborAmount)}</td>
       <td class="number ${totals.laborSavings < 0 ? 'negative-text' : ''}">${yen(totals.laborSavings)}</td>
       <td class="number strong-number ${totals.totalSavings < 0 ? 'negative-text' : ''}">${yen(totals.totalSavings)}</td>
       <td class="number">${percent(totals.reductionRate)}</td>
@@ -349,6 +389,7 @@ function renderDashboard() {
 elements.laborRate.addEventListener('input', (event) => {
   state.laborRate = clamp(event.target.value);
   elements.laborRate.value = String(state.laborRate);
+  saveState();
   renderDashboard();
 });
 
@@ -367,8 +408,10 @@ elements.detailRows.addEventListener('input', (event) => {
   }
 
   input.value = String(current[field]);
+  saveState();
   renderDashboard();
 });
 
+elements.laborRate.value = String(state.laborRate);
 renderTable(getRows());
 renderDashboard();
