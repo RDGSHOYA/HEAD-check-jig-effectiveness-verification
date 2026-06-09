@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HEAD交換削減効果ダッシュボード</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">HEAD Cost Impact Dashboard</p>
+          <h1>HEAD交換削減効果ダッシュボード</h1>
+          <p class="lead">HEADチェックで交換不要と判定できた件数と、交換が必要だった場合の工数増加を差し引いて、正味の効果額を即時に算出します。</p>
+        </div>
+        <label class="rate-card">
+          <span>工数単価（円／分）</span>
+          <input id="laborRate" type="number" min="0" value="40" />
+        </label>
+      </header>
+
+      <section id="kpis" class="kpi-grid" aria-label="主要指標"></section>
+
+      <section class="chart-grid">
+        <article class="panel large">
+          <h2>HEAD別効果額ランキング</h2>
+          <div id="rankingChart" class="bar-stack"></div>
+        </article>
+        <article class="panel">
+          <h2>正味効果の内訳</h2>
+          <div class="donut-wrap">
+            <svg id="donutChart" viewBox="0 0 220 220" role="img" aria-label="効果構成比"></svg>
+            <div id="compositionLegend" class="legend"></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="chart-grid two">
+        <article class="panel">
+          <h2>削減部品費・工数影響比較</h2>
+          <div id="stackedChart" class="vertical-chart"></div>
+        </article>
+        <article class="panel">
+          <h2>TOP5 HEAD効果額</h2>
+          <div id="topChart" class="vertical-chart"></div>
+        </article>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="table-header">
+          <h2>HEAD別明細</h2>
+          <span>入力すると全指標が即時更新されます</span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>パーツNo</th>
+                <th>HEAD名</th>
+                <th class="number">原価</th>
+                <th class="number">交換件数</th>
+                <th class="number">交換不要件数</th>
+                <th class="number">削減部品費</th>
+                <th class="number">工数効果額</th>
+                <th class="number">正味効果額</th>
+                <th class="number">削減率</th>
+              </tr>
+            </thead>
+            <tbody id="detailRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script src="./app.js"></script>
+  </body>
+</html>
